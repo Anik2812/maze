@@ -1,136 +1,221 @@
-
-/* 
-@title: maze_game_starter
-@author: Cheru Berhanu
-@tags: []
-@addedOn: 2023-08-08
+/*
+@title: Quantum Shift
+@tags: ['puzzle', 'quantum', 'dimension']
+@addedOn: 2024-07-05
+@author: Claude
 */
 
-    const player = "p"
-    const wall = "o"
-    const door = "l"
-    const box = "i"
+const player = "p";
+const wall = "w";
+const quantumWall = "q";
+const exit = "e";
+const shifter = "s";
 
-
-setSolids([ player, wall, box ]);
+const shiftSound = tune`
+250: C5^250 + E5^250 + G5^250,
+250: C6^250 + E6^250 + G6^250,
+500`;
 
 setLegend(
-	[ player, bitmap`
+  [ player, bitmap`
 ................
-................
-.....7777777....
-....7.......7...
-....7.3...3.7...
-....7.......7...
-....7.3...3.7...
-....7..333..7...
-....7.......7...
-.....7777777....
-........7.......
-.....4..7..4....
-......44744.....
-........7.......
-.......4.4......
-......4...4.....` ],
-    [ wall, bitmap`
+......3333......
+.....333333.....
+....33333333....
+...3333333333...
+...3333333333...
+...3393333933...
+...3333333333...
+...3333333333...
+....33333333....
+.....333333.....
+......3333......
+......3333......
+.....33..33.....
+....33....33....
+...33......33...`],
+  [ wall, bitmap`
 0000000000000000
-0000000000000000
-0000000000000000
-0000000000000000
-0000000000000000
-0000000000000000
-0000000000000000
-0000000000000000
-0000000000000000
-0000000000000000
-0000000000000000
-0000000000000000
-0000000000000000
-0000000000000000
-0000000000000000
+0999999999999990
+0999999999999990
+0999999999999990
+0999999999999990
+0999999999999990
+0999999999999990
+0999999999999990
+0999999999999990
+0999999999999990
+0999999999999990
+0999999999999990
+0999999999999990
+0999999999999990
+0999999999999990
 0000000000000000`],
-  [ door, bitmap`
+  [ quantumWall, bitmap`
+5555555555555555
+5222222222222225
+5222222222222225
+5222222222222225
+5222222222222225
+5222222222222225
+5222222222222225
+5222222222222225
+5222222222222225
+5222222222222225
+5222222222222225
+5222222222222225
+5222222222222225
+5222222222222225
+5222222222222225
+5555555555555555`],
+  [ exit, bitmap`
+6666666666666666
+6000000000000006
+6027777777777206
+6027000000007206
+6027066666007206
+6027066666007206
+6027066666007206
+6027066666007206
+6027066666007206
+6027066666007206
+6027066666007206
+6027000000007206
+6027777777777206
+6000000000000006
+6666666666666666`],
+  [ shifter, bitmap`
 ................
-................
-.....0000000....
-.....0022200....
-.....0022200....
-.....0000000....
-.....0000000....
-.....0000220....
-.....0000220....
-.....0000000....
-.....0000000....
-.....0000000....
-.....0000000....
-.....0000000....
-.....0000000....
-................` ],
-  [ box, bitmap`
-................
-................
-..9LLLLLLLLL9...
-..L2LLLLLLL.L...
-..LL2LLLLL.LL...
-..LLL2LLL.LLL...
-..LLLL2L.LLLL...
-..LLLLL2LLLLL...
-..LLLL.L2LLLL...
-..LLL.LLL2LLL...
-..LL.LLLLL2LL...
-..L.LLLLLLL2L...
-..9LLLLLLLLL9...
-................
-................
-................`
-    
-])
+......7777......
+.....778877.....
+....77888877....
+...7788888877...
+..778888888877..
+.77888888888877.
+7788887778888877
+7788887778888877
+.77888888888877.
+..778888888877..
+...7788888877...
+....77888877....
+.....778877.....
+......7777......
+................`]
+);
 
 let level = 0;
-const level = 
-setMap(levels[level])
+const levels = [
+  map`
+pwwww
+w...w
+w.q.e
+w...w
+wwwww`,
+  map`
+pwwwww
+w.q..w
+w.wq.w
+w..q.w
+wsqq.e
+wwwwww`,
+  map`
+pwwwwww
+w.q..qw
+w.wqw.w
+wq.sw.w
+w.wqw.w
+w..q..e
+wwwwwww`,
+  map`
+pwwwwwww
+w.q.sq.w
+w.wqww.w
+wq.qsw.w
+w.wqwwqw
+ws.q.q.e
+wwwwwwww`,
+  map`
+pwwwwwwww
+w.q.s.q.w
+w.wqwwq.w
+wq.qswq.w
+w.wqwwq.w
+ws.q.sq.w
+w.wqwwq.w
+w..q..q.e
+wwwwwwwww`
+];
 
-setPushables({
-	[ player ]: [box]
-})
+let currentLevel = levels[level];
+setMap(currentLevel);
+let inQuantumState = false;
 
-onInput("w", () => {
-	getFirst(player).y -= 1
-})
-onInput("a", () => {
-	getFirst(player).x -= 1
-})
-onInput("s", () => {
-	getFirst(player).y += 1
-})
-onInput("d", () => {
-	getFirst(player).x += 1
-})
+addText("WASD to move, J to shift, K to reset", { y: 14, color: color`7` });
+
+onInput("w", () => movePlayer(0, -1));
+onInput("a", () => movePlayer(-1, 0));
+onInput("s", () => movePlayer(0, 1));
+onInput("d", () => movePlayer(1, 0));
+
 onInput("j", () => {
-  const currentLevel = levels[level]; // get the original map of the level
+  inQuantumState = !inQuantumState;
+  playTune(shiftSound);
+  updateQuantumState();
+});
 
-  // make sure the level exists before we load it
-  if (currentLevel !== undefined) {
-    clearText("");
-    setMap(currentLevel);
-    
+onInput("k", () => {
+  if (levels[level] !== undefined) {
+    clearText();
+    setMap(levels[level]);
+    inQuantumState = false;
+    updateQuantumState();
+    addText("WASD to move, J to shift, K to reset", { y: 14, color: color`7` });
+  }
+});
+
+function movePlayer(dx, dy) {
+  const newX = getFirst(player).x + dx;
+  const newY = getFirst(player).y + dy;
+  const targetTile = getTile(newX, newY);
+
+  if (!targetTile.includes(wall) && 
+      !(targetTile.includes(quantumWall) && !inQuantumState)) {
+    getFirst(player).x = newX;
+    getFirst(player).y = newY;
+    checkPlayerPosition();
+  }
+}
+
+function checkPlayerPosition() {
+  const playerTile = getTile(getFirst(player).x, getFirst(player).y);
+  
+  if (playerTile.includes(shifter)) {
+    inQuantumState = !inQuantumState;
+    playTune(shiftSound);
+    updateQuantumState();
   }
   
-});
-
-afterInput(() => {
-    const doorsCovered = tilesWith(player, door); // tiles that both contain the player and door
-
-    // if at least one door is overlapping with a player, proceed to the next level
-    if (doorsCovered.length >= 1) {
-        // increase the current level number
-        level = level + 1;
-
-        // check if current level number is valid
-        if (level < levels.length) {
-            setMap(levels[level]);
-        } else {
-            addText("you win!", { y: 8, color: color`3` });
-        }
+  if (playerTile.includes(exit)) {
+    level++;
+    if (levels[level] !== undefined) {
+      clearText();
+      setMap(levels[level]);
+      inQuantumState = false;
+      updateQuantumState();
+      addText("Dimension shifted!", { y: 14, color: color`7` });
+    } else {
+      addText("You mastered quantum shifting!", { y: 7, color: color`7` });
     }
-});
+  }
+}
+
+function updateQuantumState() {
+  const quantumWalls = tilesWith(quantumWall);
+  quantumWalls.forEach(wall => {
+    wall.opacity = inQuantumState ? 0.3 : 1;
+  });
+  
+  addText(inQuantumState ? "Quantum State" : "Normal State", { y: 13, color: inQuantumState ? color`5` : color`7` });
+}
+
+updateQuantumState();
